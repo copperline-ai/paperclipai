@@ -32,9 +32,9 @@ describe("adapter metadata", () => {
     ]);
   });
 
-  it("keeps intentionally withheld built-in adapters marked as coming soon", () => {
+  it("keeps only intentionally withheld built-in adapters marked as coming soon", () => {
     expect(isEnabledAdapterType("process")).toBe(false);
-    expect(isEnabledAdapterType("http")).toBe(false);
+    expect(isEnabledAdapterType("http")).toBe(true);
   });
 
   it("keeps ACPX selectable from explicit configuration but out of visual pickers", () => {

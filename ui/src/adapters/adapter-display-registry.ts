@@ -124,9 +124,8 @@ const adapterDisplayMap: Record<string, AdapterDisplayInfo> = {
   },
   http: {
     label: "HTTP",
-    description: "Internal HTTP adapter",
+    description: "Invoke an external agent through an HTTP webhook",
     icon: Cpu,
-    comingSoon: true,
   },
 };
 
