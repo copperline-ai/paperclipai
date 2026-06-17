@@ -651,6 +651,31 @@ describe("agent issue mutation checkout ownership", () => {
     );
   });
 
+  it("allows an agent run that owns the active execution lock to write back even when the assignee differs", async () => {
+    mockIssueService.getById.mockResolvedValue(makeIssue({
+      assigneeAgentId: ownerAgentId,
+      executionRunId: peerActor().runId,
+    }));
+
+    const app = await createApp(peerActor());
+
+    await request(app).patch(`/api/issues/${issueId}`).send({ title: "Execution writeback" }).expect(200);
+    await request(app)
+      .put(`/api/issues/${issueId}/documents/plan`)
+      .send({ format: "markdown", body: "# execution writeback" })
+      .expect(200);
+
+    expect(mockIssueService.update).toHaveBeenCalled();
+    expect(mockDocumentService.upsertIssueDocument).toHaveBeenCalledWith(
+      expect.objectContaining({
+        issueId,
+        key: "plan",
+        createdByAgentId: peerAgentId,
+        createdByRunId: peerActor().runId,
+      }),
+    );
+  });
+
   it("stores the authenticated agent run id when creating work products", async () => {
     const app = await createApp(ownerActor());
 

@@ -773,6 +773,18 @@ function shouldImplicitlyMoveCommentedIssueToTodo(input: {
   return true;
 }
 
+function actorRunMatchesIssueLock(input: {
+  actorRunId: string | null | undefined;
+  checkoutRunId?: string | null | undefined;
+  executionRunId?: string | null | undefined;
+}) {
+  const actorRunId = typeof input.actorRunId === "string" ? input.actorRunId.trim() : "";
+  return Boolean(
+    actorRunId &&
+      (actorRunId === input.checkoutRunId || actorRunId === input.executionRunId),
+  );
+}
+
 function shouldHumanCommentResumeInProgressScheduledRetry(input: {
   hasComment: boolean;
   issueStatus: string | null | undefined;
@@ -1853,6 +1865,8 @@ export function issueRoutes(
       status: string;
       assigneeAgentId: string | null;
       assigneeUserId: string | null;
+      checkoutRunId?: string | null;
+      executionRunId?: string | null;
     },
   ) {
     if (req.actor.type !== "agent") return true;
@@ -1861,10 +1875,18 @@ export function issueRoutes(
       res.status(403).json({ error: "Agent authentication required" });
       return false;
     }
+    const actorOwnsRunLock = actorRunMatchesIssueLock({
+      actorRunId: req.actor.runId,
+      checkoutRunId: issue.checkoutRunId,
+      executionRunId: issue.executionRunId,
+    });
     const boundaryDecision = await decideIssueAccess(req, issue, "issue:mutate");
-    if (!boundaryDecision.allowed) {
+    if (!boundaryDecision.allowed && !actorOwnsRunLock) {
       res.status(403).json({ error: "Issue is outside this actor's authorization boundary" });
       return false;
+    }
+    if (actorOwnsRunLock) {
+      return true;
     }
     if (issue.assigneeAgentId === null) {
       return true;
